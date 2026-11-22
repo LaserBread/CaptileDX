@@ -41,8 +41,7 @@ target_include_directories(miniaudio PUBLIC "${MINIAUDIO_DIR}")
 add_executable(
     captile_dx
     src/main.cpp 
-    src/core/inits.cpp 
-    src/object/mesh.cpp
+    src/core/inits.cpp
     src/object/animation.cpp
     src/core/control.cpp
     src/render/camera.cpp
@@ -59,6 +58,7 @@ add_executable(
 # Tell the compiler where to find your header files
 target_include_directories(captile_dx PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/tinyobjloader
 )
 
 # Include custom local path if SOIL2 was installed under /usr/local
