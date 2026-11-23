@@ -1,16 +1,21 @@
 cmake_minimum_required(VERSION 3.27)
-project(OpenGLTest LANGUAGES C CXX)
+project(CaptileDX LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(CAPTILE_FETCH_WINDOWS_DEPS "Fetch Windows-targeted dependencies when building for Windows" ON)
 
+set(CAPTILE_FETCHING_WINDOWS FALSE)
 if(WIN32 AND CAPTILE_FETCH_WINDOWS_DEPS)
+    set(CAPTILE_FETCHING_WINDOWS TRUE)
+endif()
+
+if(CAPTILE_FETCHING_WINDOWS)
     include(FetchContent)
 
-    # These are source dependencies, built by the active compiler/toolchain. When
-    # using the MinGW toolchain below, the resulting libraries target Windows.
+    # Source dependencies are built by the active toolchain (e.g., MinGW64),
+    # producing Windows binaries even when cross-compiling from Linux.
     set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -47,13 +52,8 @@ if(WIN32 AND CAPTILE_FETCH_WINDOWS_DEPS)
         GIT_TAG v1.91.8
         GIT_SHALLOW TRUE
     )
-    FetchContent_Declare(miniaudio
-        GIT_REPOSITORY https://github.com/mackron/miniaudio.git
-        GIT_TAG 0.11.21
-        GIT_SHALLOW TRUE
-    )
 
-    FetchContent_MakeAvailable(glfw glew glm soil2 imgui miniaudio)
+    FetchContent_MakeAvailable(glfw glew glm soil2 imgui)
 
     if(NOT TARGET GLEW::GLEW)
         if(TARGET libglew_static)
@@ -75,26 +75,21 @@ if(WIN32 AND CAPTILE_FETCH_WINDOWS_DEPS)
     )
 
     set(SOIL2_INCLUDE_DIR "${SOIL2_COMPAT_INCLUDE_DIR}")
+    set(IMGUI_DIR "${imgui_SOURCE_DIR}")
+
+    set(MINIAUDIO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/miniaudio")
 else()
-    # Native builds can continue using their installed libraries and any local
-    # thirdparty checkout, as before.
-    find_package(OpenGL REQUIRED)
+    # Native builds can continue using installed libraries and local thirdparty checkouts.
     find_package(GLEW REQUIRED)
     find_package(glfw3 REQUIRED)
     find_package(glm CONFIG QUIET)
-    find_package(Threads REQUIRED)
     set(SOIL2_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty")
+    set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui")
+    set(MINIAUDIO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/miniaudio")
 endif()
 
-if(WIN32 AND CAPTILE_FETCH_WINDOWS_DEPS)
-    find_package(OpenGL REQUIRED)
-    find_package(Threads REQUIRED)
-endif()
-
-set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui")
-if(WIN32 AND CAPTILE_FETCH_WINDOWS_DEPS)
-    set(IMGUI_DIR "${imgui_SOURCE_DIR}")
-endif()
+find_package(OpenGL REQUIRED)
+find_package(Threads REQUIRED)
 
 add_library(imgui STATIC
     "${IMGUI_DIR}/imgui.cpp"
@@ -110,25 +105,17 @@ target_include_directories(imgui PUBLIC
 )
 target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
 
-set(MINIAUDIO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/miniaudio")
-if(WIN32 AND CAPTILE_FETCH_WINDOWS_DEPS)
-    set(MINIAUDIO_DIR "${miniaudio_SOURCE_DIR}")
-endif()
-
 add_library(miniaudio STATIC "${MINIAUDIO_DIR}/miniaudio.c")
 set_target_properties(miniaudio PROPERTIES LINKER_LANGUAGE CXX)
 target_compile_definitions(miniaudio PRIVATE MINIAUDIO_IMPLEMENTATION)
 target_include_directories(miniaudio PUBLIC "${MINIAUDIO_DIR}")
 
-# A CMake build tree targets one platform/toolchain. Keep platform-specific
-# target names so Linux and Windows builds are explicit, while preserving the
-# requested artifact names.
+# Keep platform-specific target names so Linux and Windows builds stay distinct
+# within a single project while producing the same base executable name.
 if(WIN32)
     set(CAPTILE_EXECUTABLE_TARGET captile_dx_windows)
-    set(CAPTILE_EXECUTABLE_NAME "captile_dx.exe")
 else()
     set(CAPTILE_EXECUTABLE_TARGET captile_dx_linux)
-    set(CAPTILE_EXECUTABLE_NAME "captile_dx")
 endif()
 
 add_executable(${CAPTILE_EXECUTABLE_TARGET}
@@ -150,7 +137,7 @@ add_executable(${CAPTILE_EXECUTABLE_TARGET}
     src/core/audio/soundresource.cpp
 )
 set_target_properties(${CAPTILE_EXECUTABLE_TARGET} PROPERTIES
-    OUTPUT_NAME "${CAPTILE_EXECUTABLE_NAME}"
+    OUTPUT_NAME "captile_dx"
 )
 
 target_include_directories(${CAPTILE_EXECUTABLE_TARGET} PRIVATE
@@ -159,42 +146,34 @@ target_include_directories(${CAPTILE_EXECUTABLE_TARGET} PRIVATE
     "${SOIL2_INCLUDE_DIR}"
 )
 
-if(NOT (WIN32 AND CAPTILE_FETCH_WINDOWS_DEPS))
+if(NOT CAPTILE_FETCHING_WINDOWS)
     # Keep support for existing local Linux SOIL2 installations.
     target_include_directories(${CAPTILE_EXECUTABLE_TARGET} PRIVATE /usr/local/include)
     target_link_directories(${CAPTILE_EXECUTABLE_TARGET} PRIVATE /usr/local/lib)
 endif()
 
-if(WIN32 AND CAPTILE_FETCH_WINDOWS_DEPS)
-    target_link_libraries(${CAPTILE_EXECUTABLE_TARGET} PRIVATE
-        OpenGL::GL
-        GLEW::GLEW
-        Threads::Threads
-        glfw
-        soil2
-        glm::glm
-        imgui
-        miniaudio
-    )
-else()
-    target_link_libraries(${CAPTILE_EXECUTABLE_TARGET} PRIVATE
-        OpenGL::GL
-        GLEW::GLEW
-        Threads::Threads
-        glfw
-        soil2
-        imgui
-        miniaudio
-    )
-    if(TARGET glm::glm)
-        target_link_libraries(${CAPTILE_EXECUTABLE_TARGET} PRIVATE glm::glm)
-    endif()
+target_link_libraries(${CAPTILE_EXECUTABLE_TARGET} PRIVATE
+    OpenGL::GL
+    GLEW::GLEW
+    Threads::Threads
+    glfw
+    soil2
+    imgui
+    miniaudio
+)
+
+if(TARGET glm::glm)
+    target_link_libraries(${CAPTILE_EXECUTABLE_TARGET} PRIVATE glm::glm)
 endif()
 
 if(MSVC)
     target_compile_options(${CAPTILE_EXECUTABLE_TARGET} PRIVATE /we4715 /we4716)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(${CAPTILE_EXECUTABLE_TARGET} PRIVATE -Werror=return-type)
+endif()
+
+if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_link_options(${CAPTILE_EXECUTABLE_TARGET} PRIVATE -static)
 endif()
 
 # Shader validation uses a host tool, not a Windows-target executable.
