@@ -13,6 +13,7 @@ CMakeUserPresets.json
 thirdparty/*
 .vscode/*
 build/*
+build-win64/*
 
 # CLion
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
