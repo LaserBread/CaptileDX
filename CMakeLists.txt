@@ -120,7 +120,18 @@ set_target_properties(miniaudio PROPERTIES LINKER_LANGUAGE CXX)
 target_compile_definitions(miniaudio PRIVATE MINIAUDIO_IMPLEMENTATION)
 target_include_directories(miniaudio PUBLIC "${MINIAUDIO_DIR}")
 
-add_executable(captile_dx
+# A CMake build tree targets one platform/toolchain. Keep platform-specific
+# target names so Linux and Windows builds are explicit, while preserving the
+# requested artifact names.
+if(WIN32)
+    set(CAPTILE_EXECUTABLE_TARGET captile_dx_windows)
+    set(CAPTILE_EXECUTABLE_NAME "captile_dx.exe")
+else()
+    set(CAPTILE_EXECUTABLE_TARGET captile_dx_linux)
+    set(CAPTILE_EXECUTABLE_NAME "captile_dx")
+endif()
+
+add_executable(${CAPTILE_EXECUTABLE_TARGET}
     src/main.cpp
     src/core/inits.cpp
     src/object/animation.cpp
@@ -138,8 +149,11 @@ add_executable(captile_dx
     src/core/audio/soundeffect.cpp
     src/core/audio/soundresource.cpp
 )
+set_target_properties(${CAPTILE_EXECUTABLE_TARGET} PROPERTIES
+    OUTPUT_NAME "${CAPTILE_EXECUTABLE_NAME}"
+)
 
-target_include_directories(captile_dx PRIVATE
+target_include_directories(${CAPTILE_EXECUTABLE_TARGET} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/tinyobjloader"
     "${SOIL2_INCLUDE_DIR}"
@@ -147,12 +161,12 @@ target_include_directories(captile_dx PRIVATE
 
 if(NOT (WIN32 AND CAPTILE_FETCH_WINDOWS_DEPS))
     # Keep support for existing local Linux SOIL2 installations.
-    target_include_directories(captile_dx PRIVATE /usr/local/include)
-    target_link_directories(captile_dx PRIVATE /usr/local/lib)
+    target_include_directories(${CAPTILE_EXECUTABLE_TARGET} PRIVATE /usr/local/include)
+    target_link_directories(${CAPTILE_EXECUTABLE_TARGET} PRIVATE /usr/local/lib)
 endif()
 
 if(WIN32 AND CAPTILE_FETCH_WINDOWS_DEPS)
-    target_link_libraries(captile_dx PRIVATE
+    target_link_libraries(${CAPTILE_EXECUTABLE_TARGET} PRIVATE
         OpenGL::GL
         GLEW::GLEW
         Threads::Threads
@@ -163,7 +177,7 @@ if(WIN32 AND CAPTILE_FETCH_WINDOWS_DEPS)
         miniaudio
     )
 else()
-    target_link_libraries(captile_dx PRIVATE
+    target_link_libraries(${CAPTILE_EXECUTABLE_TARGET} PRIVATE
         OpenGL::GL
         GLEW::GLEW
         Threads::Threads
@@ -173,14 +187,14 @@ else()
         miniaudio
     )
     if(TARGET glm::glm)
-        target_link_libraries(captile_dx PRIVATE glm::glm)
+        target_link_libraries(${CAPTILE_EXECUTABLE_TARGET} PRIVATE glm::glm)
     endif()
 endif()
 
 if(MSVC)
-    target_compile_options(captile_dx PRIVATE /we4715 /we4716)
+    target_compile_options(${CAPTILE_EXECUTABLE_TARGET} PRIVATE /we4715 /we4716)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(captile_dx PRIVATE -Werror=return-type)
+    target_compile_options(${CAPTILE_EXECUTABLE_TARGET} PRIVATE -Werror=return-type)
 endif()
 
 # Shader validation uses a host tool, not a Windows-target executable.
@@ -196,7 +210,7 @@ if(GLSLANG_VALIDATOR)
         DEPENDS ${SHADER_FILES}
         COMMENT "Validating GLSL shaders..."
     )
-    add_dependencies(captile_dx ValidateShaders)
+    add_dependencies(${CAPTILE_EXECUTABLE_TARGET} ValidateShaders)
 else()
     message(WARNING "glslangValidator not found. Shader build-time syntax checking is disabled.")
 endif()
