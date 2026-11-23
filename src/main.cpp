@@ -11,10 +11,8 @@
 #include <memory>
 #include <string>
 
-#define MINIAUDIO_IMPLEMENTATION
-#include "miniaudio.h"
-
 #include "animation.hpp"
+#include "audioengine.hpp"
 #include "camera.hpp"
 #include "color.h"
 #include "control.hpp"
@@ -36,13 +34,14 @@ PointLight l;
 std::shared_ptr<PhongShader> phongShader;
 std::shared_ptr<GouraudShader> gouraudShader;
 std::shared_ptr<FlatShader> flatShader;
-ma_engine engine;
+
+std::unique_ptr<AudioEngine> audioEngine;
 /*===========================================================================*/
 
 /*%%%MESS WITH TAMOS%%%*/
-void messWithTamos(int j){
-    ma_engine_play_sound(&engine,"/home/LaserBread/Music/Soundboard/Fish.mp3", NULL);
-    switch(j){
+void messWithTamos(int j) {
+    audioEngine->playEffect("snd_fish");
+    switch (j) {
         case 1:
             tamosTexture->setWrapModeS(GL_CLAMP_TO_EDGE);
             std::cout << "Clamped S to edge!\n";
@@ -96,51 +95,52 @@ void init(GLFWwindow* window) {
     gouraudShader = std::make_shared<GouraudShader>();
     flatShader = std::make_shared<FlatShader>();
 
+    audioEngine = std::make_unique<AudioEngine>();
+
     tamosTexture = std::make_shared<Texture>("../models/tamos.png");
-    
-    room = std::make_unique<Object>("../models/room.obj",gouraudShader);
+
+    room = std::make_unique<Object>("../models/room.obj", gouraudShader);
     room->setColor(HEX2GL(0x3b4283));
 
-    maxwell = std::make_unique<Object>("../models/maxwell.obj",phongShader, "../models/Maxwell.png");
-    std::cout << "piss" <<std::endl;
+    maxwell = std::make_unique<Object>("../models/maxwell.obj", phongShader, "../models/Maxwell.png");
+    std::cout << "piss" << std::endl;
     maxwell->setColor(HEX2GL(0x888888));
     maxwell->setShininess(30.0f);
 
-    phongTeapot = std::make_unique<Object>("../models/utah_teapot_full.obj",phongShader);
+    phongTeapot = std::make_unique<Object>("../models/utah_teapot_full.obj", phongShader);
     phongTeapot->setColor(HEX2GL(0xaF0000));
     phongTeapot->setShininess(69.0f);
 
-    gouraudTeapot = std::make_unique<Object>("../models/utah_teapot_full.obj",gouraudShader);
+    gouraudTeapot = std::make_unique<Object>("../models/utah_teapot_full.obj", gouraudShader);
     gouraudTeapot->setColor(HEX2GL(0x00af00));
     gouraudTeapot->setShininess(69.0f);
 
-    flatTeapot = std::make_unique<Object>("../models/utah_teapot_full.obj",flatShader);
+    flatTeapot = std::make_unique<Object>("../models/utah_teapot_full.obj", flatShader);
     flatTeapot->setColor(HEX2GL(0x0000af));
     flatTeapot->setShininess(69.0f);
 
     tamosCube = std::make_unique<Object>("../models/tamosCube.obj", phongShader, tamosTexture);
 
     phongTeapot->setPosition(glm::vec3(
-        8.0f * glm::sin(2.0f * glm::pi<float>() *(1.0f/3.0f)),
+        8.0f * glm::sin(2.0f * glm::pi<float>() * (1.0f / 3.0f)),
         0.0f,
-        8.0f * glm::cos(2.0f * glm::pi<float>() *(1.0f/3.0f))
-    ));
+        8.0f * glm::cos(2.0f * glm::pi<float>() * (1.0f / 3.0f))));
     gouraudTeapot->setPosition(glm::vec3(
-        8.0f * glm::sin(2.0f * glm::pi<float>() *(2.0f/3.0f)),
+        8.0f * glm::sin(2.0f * glm::pi<float>() * (2.0f / 3.0f)),
         0,
-        8.0f * glm::cos(2.0f * glm::pi<float>() *(2.0f/3.0f))
-    ));
-    flatTeapot->setPosition(glm::vec3(0.0f,0.0f,8.0f));
+        8.0f * glm::cos(2.0f * glm::pi<float>() * (2.0f / 3.0f))));
+    flatTeapot->setPosition(glm::vec3(0.0f, 0.0f, 8.0f));
     maxwell->scale(1.9f);
-    
-    room->scale(glm::vec3(20.0f, 15.0f,20.0f));
-    room->translate(glm::vec3(0.0f,1.0f, 0.0f));
+
+    room->scale(glm::vec3(20.0f, 15.0f, 20.0f));
+    room->translate(glm::vec3(0.0f, 1.0f, 0.0f));
 
     tamosCube->scale(2.5);
-    tamosCube->translate(glm::vec3(0,7,0));
+    tamosCube->translate(glm::vec3(0, 7, 0));
     tamosCube->setShininess(36);
-    
 
+    audioEngine->registerEffect("snd_fish", "/home/LaserBread/Music/Soundboard/Fish.mp3",12);
+    audioEngine->registerEffect("mus_nature","/home/LaserBread/Music/New Age/Jim Andron/tetris-cdi-ost/15 - Nature (Alternative Version).mp3",1);
 }
 /*===========================================================================*/
 
@@ -150,26 +150,20 @@ void display(GLFWwindow* window, double currentTime, Camera* cam) {
     glClearColor(HEX2GLA(0x000000));
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     /*-----------------------------------------------------------------------*/
-    tamosCube->rotate(delta*20, glm::vec3(0.0f,1.0f,0.0f));
+    tamosCube->rotate(delta * 20, glm::vec3(0.0f, 1.0f, 0.0f));
 
-    maxwell->draw(cam->lookAt(),proj,l);
-    phongTeapot->draw(cam->lookAt(),proj,l);
-    gouraudTeapot->draw(cam->lookAt(),proj,l);
-    flatTeapot->draw(cam->lookAt(),proj,l);
-    phongTeapot->draw(cam->lookAt(),proj,l);
-    room->draw(cam->lookAt(),proj,l);
-    tamosCube->draw(cam->lookAt(),proj,l);
+    maxwell->draw(cam->lookAt(), proj, l);
+    phongTeapot->draw(cam->lookAt(), proj, l);
+    gouraudTeapot->draw(cam->lookAt(), proj, l);
+    flatTeapot->draw(cam->lookAt(), proj, l);
+    phongTeapot->draw(cam->lookAt(), proj, l);
+    room->draw(cam->lookAt(), proj, l);
+    tamosCube->draw(cam->lookAt(), proj, l);
 }
 /*===========================================================================*/
 
 /*======== MAIN =============================================================*/
 int main() {
-    ma_result result;
-    result = ma_engine_init(NULL,&engine);
-    if(result != MA_SUCCESS){
-        std::cerr << "Failed to initialize audio!\n";
-        return -1;
-    };
 
     std::cout << "Starting up\n";
     if (!glfwInit()) {
@@ -204,7 +198,7 @@ int main() {
     glfwSwapInterval(1);             // enables Vsync3
 
     init(window);
-
+    audioEngine->playEffect("mus_nature");
     /*-------- RUN PROGRAM --------------------------------------------------*/
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = static_cast<float>(glfwGetTime());

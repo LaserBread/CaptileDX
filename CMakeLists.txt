@@ -53,6 +53,9 @@ add_executable(
     src/render/shading/phong.cpp
     src/render/shading/flat.cpp
     src/render/shading/gouraud.cpp
+    src/core/audio/audioengine.cpp
+    src/core/audio/soundeffect.cpp
+    src/core/audio/soundresource.cpp
 )
 
 # Tell the compiler where to find your header files
