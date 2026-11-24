@@ -43,7 +43,7 @@ class Entity {
     virtual void scale(const float s);  // Uniform scale
     virtual void resetTransform();
 
-    virtual void draw(const glm::mat4& view, const glm::mat4& projection, const PointLight& light, const glm::mat4& = glm::mat4{1.0f}) const;
+    virtual void draw(const glm::mat4& view, const glm::mat4& projection, const PointLight& light, const glm::mat4& = glm::mat4{1.0f}) const = 0;
 
     Entity(const Entity&) = delete;
     Entity& operator=(const Entity&) = delete;

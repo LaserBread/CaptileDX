@@ -98,6 +98,7 @@ class OrbitLayer : public Entity {
     std::shared_ptr<Object> body;
 
     OrbitLayer(const std::string& objPath, const std::shared_ptr<Shader> inShader);
+    OrbitLayer(const std::string& objPath, const std::shared_ptr<Shader> inShader, const std::shared_ptr<Texture> in_tex);
     ~OrbitLayer() = default;
 
     void draw(const glm::mat4& view, const glm::mat4& projection, const PointLight& light, const glm::mat4& = glm::mat4{1.0f}) const override;

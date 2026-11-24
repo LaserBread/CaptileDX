@@ -16,14 +16,14 @@
 #include "camera.hpp"
 #include "color.h"
 #include "control.hpp"
+#include "entity.hpp"
 #include "inits.h"
 #include "object.hpp"
 #include "shader.hpp"
-#include "entity.hpp"
 
 /*======== GLOBALS ==========================================================*/
 GLuint renderingProgram;
-std::shared_ptr<OrbitLayer> sun;
+std::shared_ptr<OrbitLayer> base;
 PointLight l;
 
 std::shared_ptr<PhongShader> phongShader;
@@ -37,7 +37,7 @@ void init(GLFWwindow* window) {
         glm::radians(45.0f),  // FOV
         aspect,               // aspect ratio (hard-coded for now)
         0.1f,                 // near plane
-        100.0f                // far plane
+        1000.0f               // far plane
     );
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -45,16 +45,14 @@ void init(GLFWwindow* window) {
     gouraudShader = std::make_shared<GouraudShader>();
     flatShader = std::make_shared<FlatShader>();
 
-    std::shared_ptr<OrbitLayer> moon = std::make_shared<OrbitLayer>("../models/sphere.obj",flatShader);
-    moon->body->setColor(HEX2GL(0x888888));
+    std::shared_ptr<Texture> rowboat = std::make_shared<Texture>("../models/rowboat.jpg");
+    base = std::make_shared<OrbitLayer>("../models/rowboat.obj", phongShader, rowboat);
+    base->body->setShininess(70.0f);
 
-    std::shared_ptr<OrbitLayer> earth = std::make_shared<OrbitLayer>("../models/sphere.obj",flatShader);
-    earth->body->setColor(HEX2GL(0x0000ff));
-    earth->below = std::move(moon);
-
-    std::shared_ptr<OrbitLayer> sun = std::make_shared<OrbitLayer>("../models/sphere.obj",flatShader);
-    sun->body->setColor(HEX2GL(0xff0000));
-    sun->below = std::move(earth);
+    std::shared_ptr<Texture> fish = std::make_shared<Texture>("../models/clownfish.jpg");
+    std::shared_ptr<OrbitLayer> clownfish = std::make_shared<OrbitLayer>("../models/clownfish.obj", phongShader, fish);
+    clownfish->body->setShininess(60.0f);
+    base->below
 }
 /*===========================================================================*/
 
@@ -64,13 +62,12 @@ void display(GLFWwindow* window, double currentTime, Camera* cam) {
     glClearColor(HEX2GLA(0x000000));
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     /*-----------------------------------------------------------------------*/
-    sun->draw(cam->lookAt(), proj, l);
+    base->draw(cam->lookAt(), proj, l);
 }
 /*===========================================================================*/
 
 /*======== MAIN =============================================================*/
 int main() {
-
     std::cout << "Starting up\n";
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
@@ -78,8 +75,8 @@ int main() {
     }
 
     Camera cam = Camera(
-        glm::vec3(-17.1354, 1.86116, -18.9735),
-        glm::vec3(0.635232, 0.305419, 0.709366),
+        glm::vec3(-11.1947, 37.4055, -11.5315),
+        glm::vec3(0.218092, -0.872161, 0.437916),
         glm::vec3(0.0f, 1.0f, 0.0f),
         0.5f);
 

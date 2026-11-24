@@ -86,14 +86,14 @@ void Object::setColor(const float r, const float g, const float b) {
     color = glm::vec3(r, g, b);
 }
 
-void Object::draw(const glm::mat4& view, const glm::mat4& projection, const PointLight& light, const glm::mat4&) const {
+void Object::draw(const glm::mat4& view, const glm::mat4& projection, const PointLight& light, const glm::mat4& stk) const {
     // HACK: While a downcast may be necessary, it should be handled by the
     // object specifying a shader.
     std::shared_ptr<LitShader> lShader = std::dynamic_pointer_cast<LitShader>(shader);
 
     shader->use(projection, view);
 
-    shader->sendM(modelMatrix);
+    shader->sendM(stk * modelMatrix);
 
     glm::mat3 n = glm::mat3(glm::transpose(glm::inverse(view * modelMatrix)));
     lShader->sendN(n);
@@ -221,10 +221,13 @@ void Object::setupBuffers() {
 
 OrbitLayer::OrbitLayer(const std::string& objPath, const std::shared_ptr<Shader> inShader) : Entity(){
     body = std::make_shared<Object>(objPath,inShader);
-    
+}
+
+OrbitLayer::OrbitLayer(const std::string& objPath, const std::shared_ptr<Shader> inShader, const std::shared_ptr<Texture> in_tex) : Entity(){
+    body = std::make_shared<Object>(objPath,inShader,in_tex);
 }
 
 void OrbitLayer::draw(const glm::mat4& view, const glm::mat4& projection, const PointLight& light, const glm::mat4& stk) const {
-    body->draw(view, projection, light, modelMatrix * stk);
-    if(below) below->draw(view, projection, light, modelMatrix * stk);
+    body->draw(view, projection, light, stk * modelMatrix);
+    if(below) below->draw(view, projection, light, stk * modelMatrix );
 }
