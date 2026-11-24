@@ -23,7 +23,7 @@ extern bool pickedUpLight;
 
 /*======= CONTROL =====================================================*/
 //Setup Controls
-void setControls(GLFWwindow* window, void (*callback)(int));
+void setControls(GLFWwindow* window);
 void setCamera(Camera* inCam);
 void frameDispatch(GLFWwindow* window, float delta);
 double getTime();

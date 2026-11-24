@@ -19,6 +19,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
+#include "entity.hpp"
 #include "light.hpp"
 #include "object.hpp"
 #include "texture.hpp"
@@ -48,7 +49,7 @@ Object::~Object() {
 }
 
 Object::Object(const std::string& objPath,
-               std::shared_ptr<Shader> inShader) {
+               std::shared_ptr<Shader> inShader) : Entity::Entity() {
     shader = std::move(inShader);
 
     loadOBJ(objPath);
@@ -58,7 +59,7 @@ Object::Object(const std::string& objPath,
 }
 
 Object::Object(const std::string& objPath,
-               std::shared_ptr<Shader> inShader, const std::shared_ptr<Texture> in_tex) {
+               std::shared_ptr<Shader> inShader, const std::shared_ptr<Texture> in_tex) : Entity::Entity(){
     shader = std::move(inShader);
 
     loadOBJ(objPath);
@@ -68,7 +69,7 @@ Object::Object(const std::string& objPath,
 }
 
 Object::Object(const std::string& objPath,
-               std::shared_ptr<Shader> inShader, const std::string& tex_path) {
+               std::shared_ptr<Shader> inShader, const std::string& tex_path) : Entity::Entity() {
     shader = std::move(inShader);
 
     loadOBJ(objPath);
@@ -85,31 +86,7 @@ void Object::setColor(const float r, const float g, const float b) {
     color = glm::vec3(r, g, b);
 }
 
-void Object::setPosition(const glm::vec3& pos) {
-    modelMatrix[3] = glm::vec4(pos, 1.0f);
-}
-
-void Object::translate(const glm::vec3& delta) {
-    modelMatrix = glm::translate(modelMatrix, delta);
-}
-
-void Object::rotate(float degrees, const glm::vec3& axis) {
-    modelMatrix = glm::rotate(modelMatrix, glm::radians(degrees), axis);
-}
-
-void Object::scale(const glm::vec3& s) {
-    modelMatrix = glm::scale(modelMatrix, s);
-}
-
-void Object::scale(float s) {
-    modelMatrix = glm::scale(modelMatrix, glm::vec3(s));
-}
-
-void Object::resetTransform() {
-    modelMatrix = glm::mat4(1.0f);
-}
-
-void Object::draw(const glm::mat4& view, const glm::mat4& projection, const PointLight& light) const {
+void Object::draw(const glm::mat4& view, const glm::mat4& projection, const PointLight& light, const glm::mat4&) const {
     // HACK: While a downcast may be necessary, it should be handled by the
     // object specifying a shader.
     std::shared_ptr<LitShader> lShader = std::dynamic_pointer_cast<LitShader>(shader);
@@ -240,4 +217,14 @@ void Object::setupBuffers() {
     glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
+}
+
+OrbitLayer::OrbitLayer(const std::string& objPath, const std::shared_ptr<Shader> inShader) : Entity(){
+    body = std::make_shared<Object>(objPath,inShader);
+    
+}
+
+void OrbitLayer::draw(const glm::mat4& view, const glm::mat4& projection, const PointLight& light, const glm::mat4& stk) const {
+    body->draw(view, projection, light, modelMatrix * stk);
+    if(below) below->draw(view, projection, light, modelMatrix * stk);
 }

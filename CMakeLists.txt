@@ -135,6 +135,7 @@ add_executable(${CAPTILE_EXECUTABLE_TARGET}
     src/core/audio/audioengine.cpp
     src/core/audio/soundeffect.cpp
     src/core/audio/soundresource.cpp
+    src/object/entity.cpp
 )
 set_target_properties(${CAPTILE_EXECUTABLE_TARGET} PROPERTIES
     OUTPUT_NAME "captile_dx"

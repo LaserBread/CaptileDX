@@ -35,7 +35,6 @@ double pauseTotal = 0.0f;
 bool mouseLookEnabled = false;
 Camera* cam = nullptr;
 bool adjustButtonPressed = false;
-void (*callback)(int);
 /*===========================================================================*/
 
 /*======== PAUSE ANIMATION ==================================================*/
@@ -91,31 +90,6 @@ void eventDispatch(
             case GLFW_KEY_X:
                 std::cout << "Position: " << cam->getPos().x << ", " << cam->getPos().y << ", " << cam->getPos().z << std::endl
                           << "Facing: " << cam->getDirect().x << ", " << cam->getDirect().y << ", " << cam->getDirect().z << std::endl;
-                break;
-            /*%%CHANGE TEXTURE MODE%%*/
-            case GLFW_KEY_1:
-                callback(1);
-                break;
-            case GLFW_KEY_2:
-                callback(2);
-                break;
-            case GLFW_KEY_3:
-                callback(3);
-                break;
-            case GLFW_KEY_4:
-                callback(4);
-                break;
-            case GLFW_KEY_5:
-                callback(5);
-                break;
-            case GLFW_KEY_6:
-                callback(6);
-                break;
-            case GLFW_KEY_7:
-                callback(7);
-                break;
-            case GLFW_KEY_8:
-                callback(8);
                 break;
             /*%%%%*/
         }
@@ -175,8 +149,7 @@ void frameDispatch(GLFWwindow* window, float delta) {
 
 /*======== SETUP CONTROLS ===================================================*/
 // Sets up controls
-void setControls(GLFWwindow* window, void (*incallback)(int)) {
-    callback = incallback;
+void setControls(GLFWwindow* window) {
     glfwSetKeyCallback(window, eventDispatch);
     glfwSetCursorPosCallback(window, mouse_callback);
 }

@@ -15,12 +15,15 @@
 
 #include <functional>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <memory>
+#include <stack>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "color.h"
+#include "entity.hpp"
 #include "light.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
@@ -41,9 +44,8 @@ class bad_object : public std::runtime_error {
 // In proper implementation, Object will be a virtual class that other classes
 // inherit from. But this requires a better sense of how Scenes and such will
 // be handled here. Essentially, I am building this into an engine of sorts.
-class Object {
+class Object : public Entity {
    private:
-    void _draw_super();
     void _draw_commit();
     std::vector<float> vertices;
     std::vector<float> normals;
@@ -66,26 +68,16 @@ class Object {
 
     GLuint textureID = 0;
     std::shared_ptr<Texture> tex;
-    glm::mat4 modelMatrix{1.0f};
     glm::vec3 color{1.0f, 1.0f, 1.0f};
 
     Object(const std::string& objPath, const std::shared_ptr<Shader> inShader);
     Object(const std::string& objPath,
-                   std::shared_ptr<Shader> inShader, const std::string& tex_path);
+           std::shared_ptr<Shader> inShader, const std::string& tex_path);
     Object(const std::string& objPath,
-                   std::shared_ptr<Shader> inShader, const std::shared_ptr<Texture> in_tex);
-    ~Object();
-    
-    void setPosition(const glm::vec3& pos);
-    void translate(const glm::vec3& delta);
-    void rotate(float degrees, const glm::vec3& axis);
-    void scale(const glm::vec3& s);
-    void scale(const float s);  // Uniform scale
-    void resetTransform();
+           std::shared_ptr<Shader> inShader, const std::shared_ptr<Texture> in_tex);
+    virtual ~Object();
 
-    bool in_view();
-
-    virtual void draw(const glm::mat4& view, const glm::mat4& projection, const PointLight& light) const;
+    void draw(const glm::mat4& view, const glm::mat4& projection, const PointLight& light, const glm::mat4& = glm::mat4{1.0f}) const override;
     void cleanup();
     void setColor(const glm::vec3& c);
     void setColor(const float r, const float g, const float b);
@@ -100,8 +92,17 @@ class Object {
 };
 /*===========================================================================*/
 
-/*======== OTHER FUNCTION PROTOTYPES ========================================*/
+class OrbitLayer : public Entity {
+   public:
+    std::shared_ptr<OrbitLayer> below;
+    std::shared_ptr<Object> body;
 
-/*===========================================================================*/
+    OrbitLayer(const std::string& objPath, const std::shared_ptr<Shader> inShader);
+    ~OrbitLayer() = default;
 
+    void draw(const glm::mat4& view, const glm::mat4& projection, const PointLight& light, const glm::mat4& = glm::mat4{1.0f}) const override;
+
+    OrbitLayer(const OrbitLayer&) = delete;
+    OrbitLayer& operator=(const OrbitLayer&) = delete;
+};
 #endif
